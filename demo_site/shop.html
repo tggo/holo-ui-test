@@ -1,0 +1,144 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Demo Shop — checkout flow</title>
+<style>
+  * { box-sizing: border-box; }
+  body { font-family: system-ui, sans-serif; margin: 0; background: #f5f5f7; color: #1d1d1f; }
+  header { background: #1d1d1f; color: #fff; padding: 0 32px; height: 60px;
+    display: flex; align-items: center; gap: 28px; }
+  .brand { font-size: 20px; font-weight: 700; margin-right: 12px; }
+  nav a { color: #d0d0d5; text-decoration: none; font-size: 16px; cursor: pointer; padding: 8px 4px; }
+  nav a:hover { color: #fff; }
+  .cart-badge { background: #ff3b30; color: #fff; border-radius: 10px; padding: 1px 8px;
+    font-size: 13px; margin-left: 4px; }
+  main { padding: 28px 32px; }
+  h2 { margin: 0 0 18px; }
+  .filter { width: 320px; padding: 11px 14px; font-size: 15px; border: 1px solid #c7c7cc;
+    border-radius: 9px; margin-bottom: 22px; }
+  .grid { display: grid; grid-template-columns: repeat(2, 320px); gap: 18px; }
+  .card { background: #fff; border-radius: 12px; padding: 18px; box-shadow: 0 1px 4px rgba(0,0,0,.08); }
+  .thumb { height: 90px; border-radius: 8px; margin-bottom: 12px;
+    background: linear-gradient(135deg,#e3e3e8,#cfcfd6); }
+  .name { font-weight: 600; font-size: 17px; }
+  .price { color: #6e6e73; margin: 4px 0 14px; }
+  .add { width: 100%; padding: 10px; font-size: 15px; font-weight: 600; color: #fff;
+    background: #0071e3; border: none; border-radius: 9px; cursor: pointer; }
+  .add:hover { background: #0077ed; }
+  .row { display: flex; justify-content: space-between; align-items: center;
+    background: #fff; border-radius: 10px; padding: 14px 18px; margin-bottom: 10px; max-width: 658px; }
+  .field { display: block; max-width: 420px; margin-bottom: 16px; }
+  .field label { display: block; font-size: 14px; color: #444; margin-bottom: 6px; }
+  .field input { width: 100%; padding: 11px 13px; font-size: 15px;
+    border: 1px solid #c7c7cc; border-radius: 9px; }
+  .primary { padding: 13px 26px; font-size: 16px; font-weight: 700; color: #fff;
+    background: #0071e3; border: none; border-radius: 10px; cursor: pointer; }
+  .ok { background: #e7f7ec; border: 1px solid #34c759; border-radius: 12px;
+    padding: 22px; font-size: 18px; max-width: 520px; }
+  .hidden { display: none; }
+</style>
+</head>
+<body>
+  <header>
+    <span class="brand">DemoShop</span>
+    <nav>
+      <a id="nav-home" onclick="show('home')">Home</a>
+      <a id="nav-products" onclick="show('products')">Products</a>
+      <a id="nav-cart" onclick="show('cart')">Cart<span class="cart-badge" id="badge">0</span></a>
+    </nav>
+  </header>
+  <main>
+    <!-- HOME -->
+    <section id="home">
+      <h2>Welcome to DemoShop</h2>
+      <p>Browse our products and check out. Use the navigation above.</p>
+    </section>
+
+    <!-- PRODUCTS -->
+    <section id="products" class="hidden">
+      <h2>Products</h2>
+      <input class="filter" id="filter" placeholder="Filter products…" oninput="renderProducts()">
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <!-- CART -->
+    <section id="cart" class="hidden">
+      <h2>Your Cart</h2>
+      <div id="cart-items"></div>
+      <p id="cart-empty">Your cart is empty.</p>
+      <button class="primary" id="checkout-btn" onclick="show('checkout')">Proceed to checkout</button>
+    </section>
+
+    <!-- CHECKOUT -->
+    <section id="checkout" class="hidden">
+      <h2>Checkout</h2>
+      <div class="field"><label>Full name</label><input id="f-name" autocomplete="off"></div>
+      <div class="field"><label>Email</label><input id="f-email" autocomplete="off"></div>
+      <div class="field"><label>Shipping address</label><input id="f-addr" autocomplete="off"></div>
+      <button class="primary" id="place-order" onclick="placeOrder()">Place order</button>
+    </section>
+
+    <!-- CONFIRMATION -->
+    <section id="confirm" class="hidden">
+      <div class="ok" id="confirm-box"></div>
+    </section>
+  </main>
+
+  <script>
+    const PRODUCTS = [
+      { name: "Wireless Router",     price: "$59" },
+      { name: "USB-C Cable",         price: "$12" },
+      { name: "Mechanical Keyboard", price: "$89" },
+      { name: "Webcam HD",           price: "$45" },
+    ];
+    const cart = [];
+
+    function show(id) {
+      for (const s of document.querySelectorAll('main > section')) s.classList.add('hidden');
+      document.getElementById(id).classList.remove('hidden');
+      if (id === 'products') renderProducts();
+      if (id === 'cart') renderCart();
+    }
+    function renderProducts() {
+      const q = (document.getElementById('filter').value || '').toLowerCase();
+      const grid = document.getElementById('grid');
+      grid.innerHTML = '';
+      PRODUCTS.filter(p => p.name.toLowerCase().includes(q)).forEach(p => {
+        const el = document.createElement('div');
+        el.className = 'card';
+        el.innerHTML = `<div class="thumb"></div>
+          <div class="name">${p.name}</div>
+          <div class="price">${p.price}</div>
+          <button class="add">Add to cart</button>`;
+        el.querySelector('.add').onclick = () => addToCart(p.name);
+        grid.appendChild(el);
+      });
+    }
+    function addToCart(name) {
+      cart.push(name);
+      document.getElementById('badge').textContent = cart.length;
+    }
+    function renderCart() {
+      const box = document.getElementById('cart-items');
+      box.innerHTML = '';
+      document.getElementById('cart-empty').style.display = cart.length ? 'none' : 'block';
+      cart.forEach(n => {
+        const r = document.createElement('div');
+        r.className = 'row';
+        r.innerHTML = `<span>${n}</span><span>1 ×</span>`;
+        box.appendChild(r);
+      });
+    }
+    function placeOrder() {
+      const name = document.getElementById('f-name').value.trim();
+      const email = document.getElementById('f-email').value.trim();
+      const addr = document.getElementById('f-addr').value.trim();
+      if (!name || !email || !addr) { alert('fill all fields'); return; }
+      document.getElementById('confirm-box').innerHTML =
+        `Order confirmed — thank you, ${name}!<br>${cart.length} item(s) shipping to ${addr}.`;
+      show('confirm');
+    }
+  </script>
+</body>
+</html>

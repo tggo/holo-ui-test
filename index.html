@@ -1,0 +1,446 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Holo 3.1 vs Claude — local UI-test benchmark</title>
+<meta name="description" content="Eyes + brain matrix: a local Holo 3.1 grounder vs Claude Sonnet 4.6 driving the same 9-action checkout. Fully-local hits 46s on a quiet Mac — $0, on-device.">
+<meta name="author" content="@ukrroot">
+<!-- Open Graph / Twitter — set og:image to an absolute URL after hosting for a large card -->
+<meta property="og:type" content="article">
+<meta property="og:title" content="Holo 3.1 vs Claude — local UI-test benchmark">
+<meta property="og:description" content="Eyes (grounding) + brain (planning), swapped. A fully-local Holo + qwen2.5:7b agent drives a real checkout for $0 — and on a quiet Mac it nearly matches all-cloud Sonnet.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Holo 3.1 vs Claude — local UI-test benchmark">
+<meta name="twitter:description" content="Fully-local computer-use agent ($0, on-device) vs Claude Sonnet 4.6 on the same checkout flow. 46s quiet, GPU — within 6s of all-cloud.">
+<meta name="theme-color" content="#0a0b0d">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%97%8E%3C/text%3E%3C/svg%3E">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#0a0b0d; --panel:#101216; --panel2:#15181d; --line:#22262e;
+    --ink:#e8e6df; --dim:#8b8f98; --faint:#5a5e67;
+    --local:#4ade80;   /* green  — fully local / $0 */
+    --hybrid:#ffb000;  /* amber  — hybrid           */
+    --cloud:#38bdf8;   /* cyan   — all cloud         */
+    --hot:#ff5c3a;
+    --mono:'IBM Plex Mono',monospace; --sans:'IBM Plex Sans',sans-serif;
+    --serif:'Instrument Serif',serif;
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    margin:0;background:var(--bg);color:var(--ink);font-family:var(--sans);
+    font-size:16px;line-height:1.55;letter-spacing:.01em;
+    background-image:
+      radial-gradient(1100px 600px at 78% -8%, rgba(56,189,248,.07), transparent 60%),
+      radial-gradient(900px 520px at 10% 8%, rgba(74,222,128,.06), transparent 55%),
+      linear-gradient(var(--line) 1px, transparent 1px),
+      linear-gradient(90deg, var(--line) 1px, transparent 1px);
+    background-size:auto,auto,46px 46px,46px 46px;
+    background-position:0 0,0 0,-1px -1px,-1px -1px;
+  }
+  body::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:99;
+    opacity:.035;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .wrap{max-width:1060px;margin:0 auto;padding:0 28px}
+
+  /* ---------- header / hero ---------- */
+  header{padding:84px 0 40px;border-bottom:1px solid var(--line);position:relative}
+  .kicker{font-family:var(--mono);font-size:12.5px;letter-spacing:.34em;text-transform:uppercase;
+    color:var(--faint);display:flex;gap:14px;align-items:center}
+  .kicker .dot{width:7px;height:7px;border-radius:50%;background:var(--local);
+    box-shadow:0 0 12px var(--local);animation:pulse 2.4s ease-in-out infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.35}}
+  h1{font-family:var(--serif);font-weight:400;font-size:clamp(48px,8.5vw,104px);
+    line-height:.94;margin:26px 0 0;letter-spacing:-.015em}
+  h1 em{font-style:italic;color:var(--hybrid)}
+  h1 .vs{font-family:var(--mono);font-size:.28em;vertical-align:middle;color:var(--faint);
+    letter-spacing:.1em;padding:0 .35em}
+  .sub{max-width:620px;margin:30px 0 0;color:var(--dim);font-size:18px}
+  .sub b{color:var(--ink);font-weight:600}
+  .meta{margin-top:34px;display:flex;flex-wrap:wrap;gap:10px;font-family:var(--mono);font-size:12px}
+  .tag{border:1px solid var(--line);background:var(--panel);padding:6px 11px;border-radius:6px;color:var(--dim)}
+  .tag b{color:var(--ink)}
+
+  section{padding:64px 0;border-bottom:1px solid var(--line)}
+  .eyebrow{font-family:var(--mono);font-size:12px;letter-spacing:.28em;text-transform:uppercase;
+    color:var(--faint);margin:0 0 8px}
+  h2{font-family:var(--serif);font-weight:400;font-size:clamp(30px,4.6vw,46px);margin:0 0 6px;
+    letter-spacing:-.01em}
+  .lead{color:var(--dim);max-width:680px;margin:0 0 30px}
+
+  /* ---------- architecture strip ---------- */
+  .arch{display:grid;grid-template-columns:1fr auto 1fr;gap:18px;align-items:stretch;
+    background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;margin-top:8px}
+  .role{padding:18px}
+  .role h3{font-family:var(--mono);font-size:12.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--faint);margin:0 0 12px}
+  .role p{margin:0 0 14px;color:var(--dim);font-size:14.5px}
+  .chip{font-family:var(--mono);font-size:13px;padding:7px 12px;border-radius:7px;display:inline-block;
+    margin:0 7px 7px 0;border:1px solid var(--line);background:var(--panel2)}
+  .chip.holo{color:var(--local);border-color:rgba(74,222,128,.4)}
+  .chip.qwen{color:var(--local);border-color:rgba(74,222,128,.25)}
+  .chip.son{color:var(--cloud);border-color:rgba(56,189,248,.4)}
+  .arrow{display:flex;align-items:center;justify-content:center;font-family:var(--mono);
+    color:var(--faint);font-size:24px}
+
+  /* ---------- matrix table ---------- */
+  .matrix{width:100%;border-collapse:separate;border-spacing:0;margin-top:6px;font-size:14.5px}
+  .matrix th{font-family:var(--mono);font-size:11px;letter-spacing:.16em;text-transform:uppercase;
+    color:var(--faint);text-align:left;padding:0 14px 14px;font-weight:500;vertical-align:bottom}
+  .matrix th.num,.matrix td.num{text-align:right;font-variant-numeric:tabular-nums}
+  .matrix td{padding:18px 14px;border-top:1px solid var(--line);vertical-align:middle}
+  .matrix tr{position:relative}
+  .cfg{display:flex;align-items:center;gap:12px}
+  .cfg .bar{width:4px;height:34px;border-radius:3px}
+  .cfg .name{font-weight:600;font-size:15.5px}
+  .cfg .roles{font-family:var(--mono);font-size:11.5px;color:var(--faint);margin-top:2px}
+  .pass{font-family:var(--mono);font-size:12px;color:var(--local);
+    border:1px solid rgba(74,222,128,.35);border-radius:20px;padding:3px 10px;white-space:nowrap}
+  .price{font-family:var(--mono);font-size:13px}
+  .price.free{color:var(--local)}
+  .price.mid{color:var(--hybrid)}
+  .price.full{color:var(--cloud)}
+  .big{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1}
+  .big small{font-size:11px;color:var(--faint);font-weight:400}
+  .row-local .bar{background:var(--local)} .row-hybrid .bar{background:var(--hybrid)} .row-cloud .bar{background:var(--cloud)}
+
+  /* ---------- bar viz blocks ---------- */
+  .viz{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px}
+  @media(max-width:720px){.viz{grid-template-columns:1fr}}
+  .vrow{margin:0 0 22px}
+  .vrow .vh{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px;
+    font-family:var(--mono);font-size:13px}
+  .vrow .vh .lab{color:var(--dim)} .vrow .vh .val{color:var(--ink);font-weight:600}
+  .track{height:12px;background:var(--panel2);border:1px solid var(--line);border-radius:7px;overflow:hidden}
+  .fill{height:100%;border-radius:7px 0 0 7px;width:0;transition:width 1.3s cubic-bezier(.2,.8,.2,1)}
+  .fill.local{background:linear-gradient(90deg,#2f7d50,var(--local))}
+  .fill.hybrid{background:linear-gradient(90deg,#9c6c00,var(--hybrid))}
+  .fill.cloud{background:linear-gradient(90deg,#1f6f9c,var(--cloud))}
+  .fill.stack{border-radius:0}
+  .stackrow{display:flex;height:12px;background:var(--panel2);border:1px solid var(--line);
+    border-radius:7px;overflow:hidden}
+  .seg{height:100%;width:0;transition:width 1.3s cubic-bezier(.2,.8,.2,1)}
+  .seg.eyes{background:repeating-linear-gradient(45deg,#3a6f7d,#3a6f7d 6px,#33606c 6px,#33606c 12px)}
+  .seg.brain{background:#caa84a}
+  .legend{font-family:var(--mono);font-size:11px;color:var(--faint);display:flex;gap:16px;margin-top:6px}
+  .legend i{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px;vertical-align:-1px}
+
+  /* ---------- gpu/cpu ---------- */
+  .duo{display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:8px}
+  @media(max-width:720px){.duo{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:24px;position:relative;overflow:hidden}
+  .card .corner{position:absolute;top:0;right:0;font-family:var(--mono);font-size:11px;color:var(--faint);
+    padding:8px 12px;border-left:1px solid var(--line);border-bottom:1px solid var(--line);border-radius:0 0 0 10px}
+  .card h4{font-family:var(--mono);font-size:13px;letter-spacing:.12em;text-transform:uppercase;margin:0 0 18px;color:var(--dim)}
+  .stat{font-family:var(--serif);font-size:54px;line-height:1;margin:0}
+  .stat small{font-family:var(--mono);font-size:14px;color:var(--faint)}
+  .card.cpu .stat{color:var(--ink)} .card.gpu .stat{color:var(--local)}
+  .delta{font-family:var(--mono);font-size:13px;color:var(--dim);margin-top:12px}
+  .delta b{color:var(--local)}
+
+  /* ---------- verdict ---------- */
+  .verdicts{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:8px}
+  @media(max-width:820px){.verdicts{grid-template-columns:1fr}}
+  .vc{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;position:relative}
+  .vc::before{content:"";position:absolute;left:0;top:22px;bottom:22px;width:3px;border-radius:3px}
+  .vc.l::before{background:var(--local)} .vc.h::before{background:var(--hybrid)} .vc.c::before{background:var(--cloud)}
+  .vc .when{font-family:var(--mono);font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:var(--faint);margin:0 0 8px;padding-left:14px}
+  .vc .pick{font-family:var(--serif);font-size:25px;margin:0 0 10px;padding-left:14px;line-height:1.1}
+  .vc.l .pick{color:var(--local)} .vc.h .pick{color:var(--hybrid)} .vc.c .pick{color:var(--cloud)}
+  .vc p{margin:0;color:var(--dim);font-size:14px;padding-left:14px}
+
+  /* ---------- findings / footer ---------- */
+  .finds{list-style:none;padding:0;margin:8px 0 0;display:grid;gap:14px}
+  .finds li{display:grid;grid-template-columns:30px 1fr;gap:14px;align-items:start;
+    border-top:1px solid var(--line);padding-top:14px}
+  .finds .n{font-family:var(--mono);color:var(--hot);font-size:13px}
+  .finds b{color:var(--ink)}
+  .finds span{color:var(--dim);font-size:14.5px}
+  footer{padding:48px 0 80px;color:var(--faint);font-family:var(--mono);font-size:12.5px}
+  footer .ports{display:flex;flex-wrap:wrap;gap:10px;margin:14px 0 22px}
+  footer .port{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 12px;color:var(--dim)}
+  footer .port b{color:var(--local)} footer .port.c b{color:var(--cloud)}
+
+  /* ---------- reproduce / code blocks ---------- */
+  .repro{display:grid;gap:16px;margin-top:8px}
+  .block{background:#0c0e12;border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .block .bh{display:flex;justify-content:space-between;align-items:center;padding:9px 12px 9px 16px;
+    border-bottom:1px solid var(--line);font-family:var(--mono);font-size:11.5px;color:var(--dim);letter-spacing:.04em}
+  .block .bh .step b{color:var(--local)}
+  .copy{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;
+    color:var(--dim);background:var(--panel2);border:1px solid var(--line);border-radius:6px;
+    padding:5px 11px;cursor:pointer;transition:.15s}
+  .copy:hover{color:var(--ink);border-color:var(--faint)}
+  .copy.done{color:var(--local);border-color:rgba(74,222,128,.45)}
+  .block pre{margin:0;padding:15px 18px;overflow-x:auto;font-family:var(--mono);font-size:12.5px;
+    line-height:1.75;color:#cfd3da;-webkit-overflow-scrolling:touch}
+  .block pre .c{color:var(--faint)}
+  .block pre .k{color:var(--cloud)}
+  .block pre .s{color:var(--local)}
+  .block pre .a{color:var(--hybrid)}
+
+  .reveal{opacity:0;transform:translateY(18px);animation:rise .8s cubic-bezier(.2,.8,.2,1) forwards}
+  @keyframes rise{to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker reveal"><span class="dot"></span>local computer-use benchmark · M4 Max · 2026-06-03</div>
+    <h1 class="reveal" style="animation-delay:.06s">Holo&nbsp;3.1<span class="vs">vs</span><em>Claude</em></h1>
+    <p class="sub reveal" style="animation-delay:.14s">A UI test needs two roles — <b>eyes</b> that ground a screenshot into a click, and a <b>brain</b> that decides the next move. We swap who plays each role and run the <b>same 9-action checkout</b>, measuring wall-time, tokens and cost.</p>
+    <div class="meta reveal" style="animation-delay:.22s">
+      <span class="tag"><b>Holo 3.1</b> 35B-A3B Q4 · llama.cpp</span>
+      <span class="tag"><b>qwen2.5:7b</b> · ollama</span>
+      <span class="tag"><b>Sonnet 4.6</b></span>
+      <span class="tag">Playwright · Chromium</span>
+    </div>
+  </header>
+
+  <!-- ARCHITECTURE -->
+  <section>
+    <p class="eyebrow">the split</p>
+    <h2>Eyes &amp; brain</h2>
+    <p class="lead">Holo is a grounding model — it turns “find the Cart link” into pixels. The reasoning can live in a separate LLM. That lets the brain be small and local while Holo handles sight.</p>
+    <div class="arch reveal">
+      <div class="role">
+        <h3>◎ Eyes — grounding</h3>
+        <p>screenshot + target&nbsp;→&nbsp;(x,&nbsp;y) on a 0–1000 grid</p>
+        <span class="chip holo">Holo 3.1 (local)</span>
+        <span class="chip son">Sonnet 4.6</span>
+      </div>
+      <div class="arrow">⇄</div>
+      <div class="role">
+        <h3>⌁ Brain — planning</h3>
+        <p>page text + goal + history&nbsp;→&nbsp;next action (JSON)</p>
+        <span class="chip qwen">qwen2.5:7b (local)</span>
+        <span class="chip son">Sonnet 4.6</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- MATRIX -->
+  <section>
+    <p class="eyebrow">results · scenario checkout-flow</p>
+    <h2>The matrix</h2>
+    <p class="lead">All three combinations complete the flow. The trade is speed vs. cost vs. where the data goes.</p>
+    <table class="matrix">
+      <thead><tr>
+        <th>Config</th><th>Status</th><th class="num">Total</th><th class="num">Model</th>
+        <th class="num">Tokens</th><th class="num">Cost</th>
+      </tr></thead>
+      <tbody>
+        <tr class="row-local reveal">
+          <td><div class="cfg"><span class="bar"></span><div><div class="name">Holo + LocalModel</div><div class="roles">Holo eyes · qwen2.5:7b brain</div></div></div></td>
+          <td><span class="pass">✓ PASS</span></td>
+          <td class="num"><span class="big">~90<small> s</small></span></td>
+          <td class="num">↓ 46 s quiet</td>
+          <td class="num">15.4k</td>
+          <td class="num"><span class="price free">$0</span></td>
+        </tr>
+        <tr class="row-hybrid reveal" style="animation-delay:.08s">
+          <td><div class="cfg"><span class="bar"></span><div><div class="name">Holo + Sonnet</div><div class="roles">Holo eyes · Sonnet brain</div></div></div></td>
+          <td><span class="pass">✓ PASS</span></td>
+          <td class="num"><span class="big">58<small> s</small></span></td>
+          <td class="num">52 s</td>
+          <td class="num">16.0k</td>
+          <td class="num"><span class="price mid">brain</span></td>
+        </tr>
+        <tr class="row-cloud reveal" style="animation-delay:.16s">
+          <td><div class="cfg"><span class="bar"></span><div><div class="name">Sonnet + Sonnet</div><div class="roles">Sonnet eyes · Sonnet brain</div></div></div></td>
+          <td><span class="pass">✓ PASS</span></td>
+          <td class="num"><span class="big" style="color:var(--cloud)">40<small> s</small></span></td>
+          <td class="num">34 s</td>
+          <td class="num">17.8k</td>
+          <td class="num"><span class="price full">all&nbsp;cloud</span></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="viz">
+      <div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">88 s</span></div>
+          <div class="track"><div class="fill local" data-w="90"></div></div>
+        </div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Holo + Sonnet</span><span class="val">58 s</span></div>
+          <div class="track"><div class="fill hybrid" data-w="59"></div></div>
+        </div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Sonnet + Sonnet</span><span class="val">40 s</span></div>
+          <div class="track"><div class="fill cloud" data-w="41"></div></div>
+        </div>
+        <p class="legend" style="margin-top:14px">▸ wall-clock, lower is faster</p>
+      </div>
+      <div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">15.4k tok</span></div>
+          <div class="stackrow"><div class="seg eyes" data-w="55"></div><div class="seg brain" data-w="31"></div></div>
+        </div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Holo + Sonnet</span><span class="val">16.0k tok</span></div>
+          <div class="stackrow"><div class="seg eyes" data-w="55"></div><div class="seg brain" data-w="35"></div></div>
+        </div>
+        <div class="vrow">
+          <div class="vh"><span class="lab">Sonnet + Sonnet</span><span class="val">17.8k tok</span></div>
+          <div class="stackrow"><div class="seg eyes" data-w="65"></div><div class="seg brain" data-w="35"></div></div>
+        </div>
+        <p class="legend"><span><i class="seg eyes" style="background:#3a6f7d"></i>eyes (screenshot-heavy)</span><span><i style="background:#caa84a"></i>brain</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- GPU vs CPU -->
+  <section>
+    <p class="eyebrow">local brain placement</p>
+    <h2>GPU vs CPU</h2>
+    <p class="lead">Holo’s 21&nbsp;GB sit on the Metal GPU. A co-resident brain there overflows the default working-set (~27&nbsp;GB on a 36&nbsp;GB Mac) → Metal OOM. Raise <span style="font-family:var(--mono);color:var(--ink)">iogpu.wired_limit_mb</span> to 31000 and the brain fits.</p>
+    <div class="duo">
+      <div class="card cpu reveal"><span class="corner">num_gpu = 0</span>
+        <h4>qwen brain on CPU</h4>
+        <p class="stat">97.7<small> s total</small></p>
+        <p class="delta">model-time 90.6 s · always safe, zero GPU contention</p>
+      </div>
+      <div class="card gpu reveal" style="animation-delay:.08s"><span class="corner">GPU · Spotlight off</span>
+        <h4>qwen brain on GPU · quiet</h4>
+        <p class="stat">46.2<small> s total</small></p>
+        <p class="delta">model-time 39.2 s · <b>~53% faster</b>, no OOM</p>
+      </div>
+    </div>
+    <p class="lead" style="margin-top:24px"><b style="color:var(--ink)">The variance was Spotlight.</b> <span style="font-family:var(--mono)">mds_stores</span> re-indexing the code volume sat at <b style="color:var(--hot)">76% CPU</b> and <b style="color:var(--ink)">doubled</b> the run. Quiet (<span style="font-family:var(--mono)">mdutil -a -i off</span>) + GPU, the fully-local config drops to <b style="color:var(--local)">46&nbsp;s</b> — <b style="color:var(--ink)">faster than Holo+Sonnet (58&nbsp;s)</b> and within ~6&nbsp;s of all-cloud. Progression: <span style="font-family:var(--mono)">98 → 89 → 60 → 46 s</span>. The eyes still dominate — Holo grounds in ~5&nbsp;s/call vs Sonnet’s ~2&nbsp;s.</p>
+  </section>
+
+  <!-- VERDICT -->
+  <section>
+    <p class="eyebrow">when to pick what</p>
+    <h2>Verdict</h2>
+    <div class="verdicts">
+      <div class="vc c reveal">
+        <p class="when">latency matters</p>
+        <p class="pick">Sonnet + Sonnet</p>
+        <p>Fastest (40&nbsp;s), simplest, one vendor. The default when a key is fine and screenshots may leave the box.</p>
+      </div>
+      <div class="vc l reveal" style="animation-delay:.08s">
+        <p class="when">on-box / $0</p>
+        <p class="pick">Holo + qwen2.5:7b</p>
+        <p>Fully local, zero marginal cost, nothing leaves the machine. Pays ~2× the wall-time for it.</p>
+      </div>
+      <div class="vc h reveal" style="animation-delay:.16s">
+        <p class="when">niche</p>
+        <p class="pick">Holo + Sonnet</p>
+        <p>Buys little — you still pay Sonnet for the brain and Holo’s eyes are slower. Only if the brain must be frontier <em>and</em> pixels can’t leave.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- FINDINGS -->
+  <section style="border-bottom:none">
+    <p class="eyebrow">field notes</p>
+    <h2>What actually broke</h2>
+    <ul class="finds">
+      <li class="reveal"><span class="n">01</span><span><b>Holo won’t run on ollama.</b> Its engine doesn’t implement the <span style="font-family:var(--mono)">qwen35moe</span> arch and the <span style="font-family:var(--mono)">hf.co</span> pull 400s on the manifest. Served the cached GGUF + vision projector directly with llama.cpp instead.</span></li>
+      <li class="reveal" style="animation-delay:.05s"><span class="n">02</span><span><b>The brain is the fragile part, not the eyes.</b> A 3B (llama3.2) loops and emits <span style="font-family:var(--mono)">click|type</span>; qwen2.5:7b is the floor that plans this flow. Holo &amp; Sonnet eyes ground to near-identical pixels.</span></li>
+      <li class="reveal" style="animation-delay:.1s"><span class="n">03</span><span><b>Disambiguate repeated controls.</b> Four identical “Add to cart” buttons — the observation tags each with its card text <span style="font-family:var(--mono)">(in: Mechanical Keyboard $89)</span> so the brain can target the right one.</span></li>
+      <li class="reveal" style="animation-delay:.15s"><span class="n">04</span><span><b>Parse JSON with <span style="font-family:var(--mono)">raw_decode</span>.</b> Both Claude and small local models append prose after the object; grabbing the first complete object from the first <span style="font-family:var(--mono)">{</span> survives it.</span></li>
+    </ul>
+  </section>
+
+  <!-- REPRODUCE -->
+  <section>
+    <p class="eyebrow">reproduce</p>
+    <h2>Run it yourself</h2>
+    <p class="lead">Two model servers (Holo on llama.cpp, the brain on Ollama) + a Playwright harness. macOS / Apple-Silicon shown; a 36 GB Mac runs the 35B-A3B Q4 + a 7B brain.</p>
+    <div class="repro">
+
+      <div class="block reveal">
+        <div class="bh"><span class="step"><b>1</b> · eyes — Holo 3.1 via llama.cpp&nbsp;(:8080)</span><button class="copy">copy</button></div>
+<pre><span class="c"># ollama can't run the qwen35moe arch — serve the GGUF + vision projector directly</span>
+brew install llama.cpp
+llama-server -hf <span class="s">Hcompany/Holo-3.1-35B-A3B-GGUF:Q4_K_M</span> \
+  --alias holo31 --host 127.0.0.1 --port <span class="a">8080</span> \
+  -c 4096 -ngl 999 -fa on --jinja</pre>
+      </div>
+
+      <div class="block reveal" style="animation-delay:.05s">
+        <div class="bh"><span class="step"><b>2</b> · brain — qwen2.5:7b via Ollama&nbsp;(:11434)</span><button class="copy">copy</button></div>
+<pre><span class="c"># use the official build from ollama.com (the Homebrew bottle ships no GGUF runner)</span>
+ollama pull <span class="s">qwen2.5:7b</span></pre>
+      </div>
+
+      <div class="block reveal" style="animation-delay:.1s">
+        <div class="bh"><span class="step"><b>3</b> · mac — let the brain share the GPU</span><button class="copy">copy</button></div>
+<pre><span class="c"># Holo's 21 GB + a 7B brain exceed the default Metal working-set → raise it</span>
+sudo sysctl iogpu.wired_limit_mb=<span class="a">31000</span>
+<span class="c"># …or skip this and run the brain on CPU (default, no flag needed)</span></pre>
+      </div>
+
+      <div class="block reveal" style="animation-delay:.15s">
+        <div class="bh"><span class="step"><b>4</b> · harness — setup &amp; run</span><button class="copy">copy</button></div>
+<pre>python3 -m venv .venv &amp;&amp; . .venv/bin/activate
+pip install openai anthropic playwright pydantic
+playwright install chromium
+echo <span class="s">'ANTHROPIC_API_KEY=sk-ant-…'</span> &gt; .env       <span class="c"># for the Sonnet roles</span>
+
+<span class="c"># all three configs, watch the browser</span>
+python bench.py --scenario checkout-flow --headed
+
+<span class="c"># fully-local only, brain on the GPU</span>
+python bench.py --only <span class="s">"Holo + LocalModel"</span> --brain-gpu</pre>
+      </div>
+
+      <div class="block reveal" style="animation-delay:.2s">
+        <div class="bh"><span class="step">the whole idea, in a snippet</span><button class="copy">copy</button></div>
+<pre><span class="k">def</span> step(page, goal, history):
+    <span class="c"># BRAIN: page text + goal + history → next action</span>
+    dec = brain.next_action(goal, observe(page), history)
+    <span class="c"># → {"action":"click","target":"Add to cart for Mechanical Keyboard"}</span>
+
+    <span class="c"># EYES: screenshot + that target → pixel coordinates</span>
+    hit = eyes.locate(page.screenshot(), dec.target, 1280, 800)
+    page.mouse.click(hit.px, hit.py)        <span class="c"># execute, observe, repeat</span></pre>
+      </div>
+
+    </div>
+  </section>
+
+  <footer>
+    <div>RUNTIME — two model servers, two ports</div>
+    <div class="ports">
+      <span class="port"><b>:8080</b> &nbsp;llama.cpp&nbsp;→&nbsp;Holo 3.1 (eyes, Metal GPU)</span>
+      <span class="port c"><b>:11434</b> &nbsp;ollama&nbsp;→&nbsp;brain models (qwen / llama3.2)</span>
+    </div>
+    <div>~/code/holo-ui-test · checkout-flow · 1280×800 · all three configs ✓ PASS</div>
+  </footer>
+
+</div>
+
+<script>
+  // animate bars when scrolled into view
+  const io = new IntersectionObserver((es)=>{
+    for(const e of es){ if(e.isIntersecting){
+      e.target.querySelectorAll('.fill,.seg').forEach(el=>{ el.style.width = el.dataset.w + '%'; });
+      io.unobserve(e.target);
+    }}
+  },{threshold:.25});
+  document.querySelectorAll('.viz').forEach(v=>io.observe(v));
+
+  // copy-to-clipboard on code blocks (copies textContent → strips highlight spans)
+  document.querySelectorAll('.copy').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      const code=btn.closest('.block').querySelector('pre').textContent.trim();
+      navigator.clipboard.writeText(code).then(()=>{
+        btn.textContent='copied ✓'; btn.classList.add('done');
+        setTimeout(()=>{btn.textContent='copy'; btn.classList.remove('done');},1400);
+      });
+    });
+  });
+</script>
+</body>
+</html>
