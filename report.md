@@ -14,9 +14,11 @@ tokens.
 
 | Config | Eyes | Brain | Result | Total | Model-time | Steps | Eyes tok | Brain tok | $ |
 |---|---|---|:--:|--:|--:|--:|--:|--:|--:|
-| **Holo + LocalModel** | Holo 3.1 (local) | qwen2.5:7b (local) | ✅ | 88–98 s | 75–91 s | 8 | 9.9k | 5.5k | **$0** |
-| **Holo + Sonnet** | Holo 3.1 (local) | Sonnet 4.6 | ✅ | 58 s | 52 s | 8 | 9.9k | 6.2k | brain only |
 | **Sonnet + Sonnet** | Sonnet 4.6 | Sonnet 4.6 | ✅ | **40 s** | 34 s | 8 | 11.6k | 6.2k | all cloud |
+| **Holo + LocalModel** | Holo 3.1 (local) | qwen2.5:7b (local) | ✅ | **46 s** | 39 s | 8 | 9.9k | 5.5k | **$0** |
+| **Holo + Sonnet** | Holo 3.1 (local) | Sonnet 4.6 | ✅ | 58 s | 52 s | 8 | 9.9k | 6.2k | brain only |
+
+(Ranked fastest first; local time is GPU + quiet system — see GPU vs CPU below.)
 
 All three complete the flow. Differences:
 
@@ -62,7 +64,7 @@ reboot). Run on a quiet machine, or `sudo mdutil -a -i off` while benchmarking.
 
 - **Latency matters, key is fine →** Sonnet+Sonnet. Fastest, simplest, one vendor.
 - **Must stay on-box / zero marginal cost →** Holo + qwen2.5:7b, fully local.
-  Slower (~90 s) but $0 and nothing leaves the machine.
+  On a quiet GPU it nearly matches all-cloud (46 vs 40 s) at $0, nothing leaves the box.
 - **Hybrid (Holo + Sonnet)** buys little here: you still pay Sonnet for the brain
   and Holo's eyes are slower than Sonnet's. It makes sense only when the *brain*
   must be a frontier model **and** screenshots can't leave the box.
