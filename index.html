@@ -113,6 +113,18 @@
   .big{font-family:var(--mono);font-size:22px;font-weight:600;line-height:1}
   .big small{font-size:11px;color:var(--faint);font-weight:400}
   .row-local .bar{background:var(--local)} .row-hybrid .bar{background:var(--hybrid)} .row-cloud .bar{background:var(--cloud)}
+  .badge{font-family:var(--mono);font-size:10px;letter-spacing:.08em;text-transform:uppercase;
+    padding:3px 8px;border-radius:20px;display:inline-block;margin-top:6px}
+  .badge.win{color:var(--cloud);border:1px solid rgba(56,189,248,.45);background:rgba(56,189,248,.06)}
+  .badge.cheap{color:var(--local);border:1px solid rgba(74,222,128,.45);background:rgba(74,222,128,.06)}
+  /* time leaderboard scale */
+  .barwrap{position:relative}
+  .barwrap .gl{position:absolute;top:0;bottom:30px;width:1px;background:var(--line)}
+  .scale{position:relative;height:18px;margin-top:2px}
+  .scale span{position:absolute;transform:translateX(-50%);font-family:var(--mono);font-size:10px;color:var(--faint);top:2px}
+  .vrow.win .track{box-shadow:0 0 0 1px rgba(56,189,248,.35), 0 0 14px rgba(56,189,248,.18)}
+  .vh .lab .zap{color:var(--cloud)}
+  .endval{font-family:var(--mono);font-size:11px;color:var(--faint)}
 
   /* ---------- bar viz blocks ---------- */
   .viz{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:10px}
@@ -308,20 +320,20 @@
   <section>
     <p class="eyebrow">results · scenario checkout-flow</p>
     <h2>The matrix</h2>
-    <p class="lead">All three combinations complete the flow. The trade is speed vs. cost vs. where the data goes.</p>
+    <p class="lead">All three complete the flow — ranked fastest first. <b style="color:var(--ink)">Lower total = faster.</b> The trade is speed vs. cost vs. where the data goes.</p>
     <table class="matrix">
       <thead><tr>
-        <th>Config</th><th>Status</th><th class="num">Total</th><th class="num">Model</th>
+        <th>Config (fastest → slowest)</th><th>Status</th><th class="num">Total ↓</th><th class="num">Model</th>
         <th class="num">Tokens</th><th class="num">Cost</th>
       </tr></thead>
       <tbody>
-        <tr class="row-local reveal">
-          <td><div class="cfg"><span class="bar"></span><div><div class="name">Holo + LocalModel</div><div class="roles">Holo eyes · qwen2.5:7b brain</div></div></div></td>
+        <tr class="row-cloud reveal">
+          <td><div class="cfg"><span class="bar"></span><div><div class="name">Sonnet + Sonnet</div><div class="roles">Sonnet eyes · Sonnet brain</div></div></div></td>
           <td><span class="pass">✓ PASS</span></td>
-          <td class="num"><span class="big">~90<small> s</small></span></td>
-          <td class="num">↓ 46 s quiet</td>
-          <td class="num">15.4k</td>
-          <td class="num"><span class="price free">$0</span></td>
+          <td class="num"><span class="big" style="color:var(--cloud)">40<small> s</small></span><div><span class="badge win">⚡ fastest</span></div></td>
+          <td class="num">34 s</td>
+          <td class="num">17.8k</td>
+          <td class="num"><span class="price full">all&nbsp;cloud</span></td>
         </tr>
         <tr class="row-hybrid reveal" style="animation-delay:.08s">
           <td><div class="cfg"><span class="bar"></span><div><div class="name">Holo + Sonnet</div><div class="roles">Holo eyes · Sonnet brain</div></div></div></td>
@@ -331,47 +343,51 @@
           <td class="num">16.0k</td>
           <td class="num"><span class="price mid">brain</span></td>
         </tr>
-        <tr class="row-cloud reveal" style="animation-delay:.16s">
-          <td><div class="cfg"><span class="bar"></span><div><div class="name">Sonnet + Sonnet</div><div class="roles">Sonnet eyes · Sonnet brain</div></div></div></td>
+        <tr class="row-local reveal" style="animation-delay:.16s">
+          <td><div class="cfg"><span class="bar"></span><div><div class="name">Holo + LocalModel</div><div class="roles">Holo eyes · qwen2.5:7b brain</div></div></div></td>
           <td><span class="pass">✓ PASS</span></td>
-          <td class="num"><span class="big" style="color:var(--cloud)">40<small> s</small></span></td>
-          <td class="num">34 s</td>
-          <td class="num">17.8k</td>
-          <td class="num"><span class="price full">all&nbsp;cloud</span></td>
+          <td class="num"><span class="big">90<small> s</small></span><div><span class="endval">↓ 46 s quiet</span></div></td>
+          <td class="num">78 s</td>
+          <td class="num">15.4k</td>
+          <td class="num"><span class="price free">$0</span><div><span class="badge cheap">$0 cheapest</span></div></td>
         </tr>
       </tbody>
     </table>
 
     <div class="viz">
-      <div>
-        <div class="vrow">
-          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">88 s</span></div>
-          <div class="track"><div class="fill local" data-w="90"></div></div>
+      <div class="barwrap">
+        <p class="legend" style="margin:0 0 14px">▸ wall-clock per run · shorter bar = faster · scale 0–100&nbsp;s</p>
+        <div class="vrow win">
+          <div class="vh"><span class="lab"><span class="zap">⚡</span> Sonnet + Sonnet</span><span class="val">40 s</span></div>
+          <div class="track"><div class="fill cloud" data-w="40"></div></div>
         </div>
         <div class="vrow">
           <div class="vh"><span class="lab">Holo + Sonnet</span><span class="val">58 s</span></div>
-          <div class="track"><div class="fill hybrid" data-w="59"></div></div>
+          <div class="track"><div class="fill hybrid" data-w="58"></div></div>
         </div>
         <div class="vrow">
-          <div class="vh"><span class="lab">Sonnet + Sonnet</span><span class="val">40 s</span></div>
-          <div class="track"><div class="fill cloud" data-w="41"></div></div>
+          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">90 s <span class="endval">· 46 s quiet</span></span></div>
+          <div class="track"><div class="fill local" data-w="90"></div></div>
         </div>
-        <p class="legend" style="margin-top:14px">▸ wall-clock, lower is faster</p>
+        <div class="scale">
+          <span style="left:0%">0</span><span style="left:25%">25</span><span style="left:50%">50</span><span style="left:75%">75</span><span style="left:100%">100s</span>
+        </div>
       </div>
       <div>
+        <p class="legend" style="margin:0 0 14px"><span><i class="seg eyes" style="background:#3a6f7d"></i>eyes (screenshot-heavy)</span><span><i style="background:#caa84a"></i>brain</span></p>
         <div class="vrow">
-          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">15.4k tok</span></div>
-          <div class="stackrow"><div class="seg eyes" data-w="55"></div><div class="seg brain" data-w="31"></div></div>
+          <div class="vh"><span class="lab">Sonnet + Sonnet</span><span class="val">17.8k tok</span></div>
+          <div class="stackrow"><div class="seg eyes" data-w="65"></div><div class="seg brain" data-w="35"></div></div>
         </div>
         <div class="vrow">
           <div class="vh"><span class="lab">Holo + Sonnet</span><span class="val">16.0k tok</span></div>
           <div class="stackrow"><div class="seg eyes" data-w="55"></div><div class="seg brain" data-w="35"></div></div>
         </div>
         <div class="vrow">
-          <div class="vh"><span class="lab">Sonnet + Sonnet</span><span class="val">17.8k tok</span></div>
-          <div class="stackrow"><div class="seg eyes" data-w="65"></div><div class="seg brain" data-w="35"></div></div>
+          <div class="vh"><span class="lab">Holo + LocalModel</span><span class="val">15.4k tok</span></div>
+          <div class="stackrow"><div class="seg eyes" data-w="55"></div><div class="seg brain" data-w="31"></div></div>
         </div>
-        <p class="legend"><span><i class="seg eyes" style="background:#3a6f7d"></i>eyes (screenshot-heavy)</span><span><i style="background:#caa84a"></i>brain</span></p>
+        <p class="legend" style="margin-top:12px;color:var(--faint)">tokens ≈ equal — the screenshot dominates either way</p>
       </div>
     </div>
   </section>
