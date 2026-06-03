@@ -6,13 +6,18 @@
 <title>Holo 3.1 vs Claude — local UI-test benchmark</title>
 <meta name="description" content="Eyes + brain matrix: a local Holo 3.1 grounder vs Claude Sonnet 4.6 driving the same 9-action checkout. Fully-local hits 46s on a quiet Mac — $0, on-device.">
 <meta name="author" content="@ukrroot">
-<!-- Open Graph / Twitter — set og:image to an absolute URL after hosting for a large card -->
+<!-- Open Graph / Twitter -->
 <meta property="og:type" content="article">
+<meta property="og:url" content="https://tggo.github.io/holo-ui-test/">
 <meta property="og:title" content="Holo 3.1 vs Claude — local UI-test benchmark">
 <meta property="og:description" content="Eyes (grounding) + brain (planning), swapped. A fully-local Holo + qwen2.5:7b agent drives a real checkout for $0 — and on a quiet Mac it nearly matches all-cloud Sonnet.">
+<meta property="og:image" content="https://tggo.github.io/holo-ui-test/og.png">
+<meta property="og:image:width" content="1536">
+<meta property="og:image:height" content="1024">
 <meta name="twitter:card" content="summary_large_image">
 <meta name="twitter:title" content="Holo 3.1 vs Claude — local UI-test benchmark">
 <meta name="twitter:description" content="Fully-local computer-use agent ($0, on-device) vs Claude Sonnet 4.6 on the same checkout flow. 46s quiet, GPU — within 6s of all-cloud.">
+<meta name="twitter:image" content="https://tggo.github.io/holo-ui-test/og.png">
 <meta name="theme-color" content="#0a0b0d">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%E2%97%8E%3C/text%3E%3C/svg%3E">
 
@@ -166,6 +171,25 @@
   footer .port{border:1px solid var(--line);background:var(--panel);border-radius:6px;padding:8px 12px;color:var(--dim)}
   footer .port b{color:var(--local)} footer .port.c b{color:var(--cloud)}
 
+  /* ---------- test-loop diagram ---------- */
+  .diagram{background:var(--panel);border:1px solid var(--line);border-radius:16px;
+    padding:26px 22px 20px;margin-top:8px;overflow-x:auto}
+  .diagram svg{width:100%;height:auto;min-width:720px;display:block}
+  .dg-node{fill:#14171c;stroke:var(--line);stroke-width:1.5}
+  .dg-node.eyes{stroke:rgba(74,222,128,.5)} .dg-node.brain{stroke:rgba(255,176,0,.5)}
+  .dg-title{fill:var(--ink);font:600 16px var(--sans)}
+  .dg-role{font:500 11px var(--mono);letter-spacing:.16em}
+  .dg-role.eyes{fill:var(--local)} .dg-role.brain{fill:var(--hybrid)}
+  .dg-sub{fill:var(--dim);font:12px var(--mono)}
+  .dg-edge{stroke:var(--faint);stroke-width:1.7;fill:none}
+  .dg-edge.dash{stroke-dasharray:5 5;stroke:#3a7d8c}
+  .dg-edge.loop{stroke:#6b6f78}
+  .dg-lab{fill:var(--dim);font:11.5px var(--mono)}
+  .dg-lab.cy{fill:#5ec8e0} .dg-lab.gn{fill:var(--local)} .dg-lab.am{fill:var(--hybrid)}
+  .dg-cap{fill:var(--faint);font:11px var(--mono);letter-spacing:.1em}
+  .dash{stroke-dashoffset:0;animation:flow 1s linear infinite}
+  @keyframes flow{to{stroke-dashoffset:-20}}
+
   /* ---------- reproduce / code blocks ---------- */
   .repro{display:grid;gap:16px;margin-top:8px}
   .block{background:#0c0e12;border:1px solid var(--line);border-radius:12px;overflow:hidden}
@@ -222,6 +246,61 @@
         <span class="chip qwen">qwen2.5:7b (local)</span>
         <span class="chip son">Sonnet 4.6</span>
       </div>
+    </div>
+  </section>
+
+  <!-- TEST LOOP DIAGRAM -->
+  <section>
+    <p class="eyebrow">how a run works</p>
+    <h2>The test loop</h2>
+    <p class="lead">One step = the brain reads the page and picks an action, the eyes turn that into a click, the browser updates. Repeat until the brain says done. Swap either model without touching the loop.</p>
+    <div class="diagram reveal">
+      <svg viewBox="0 0 1000 348" role="img" aria-label="agent test loop diagram">
+        <defs>
+          <marker id="ah" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#8b8f98"/></marker>
+          <marker id="ahc" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 z" fill="#3a7d8c"/></marker>
+        </defs>
+
+        <!-- screenshot feed: page -> eyes (top) -->
+        <path class="dg-edge dash dash" d="M100,122 V72 H646 V118" marker-end="url(#ahc)"/>
+        <text class="dg-lab cy" x="300" y="62" text-anchor="middle">screenshot (pixels)</text>
+
+        <!-- main pipeline arrows -->
+        <path class="dg-edge" d="M190,170 H276" marker-end="url(#ah)"/>
+        <text class="dg-lab" x="233" y="160" text-anchor="middle">observe</text>
+        <path class="dg-edge" d="M463,170 H549" marker-end="url(#ah)"/>
+        <text class="dg-lab am" x="509" y="160" text-anchor="middle">target</text>
+        <path class="dg-edge" d="M736,170 H813" marker-end="url(#ah)"/>
+        <text class="dg-lab gn" x="775" y="159" text-anchor="middle">(x, y)</text>
+
+        <!-- loop-back: execute -> page (bottom) -->
+        <path class="dg-edge loop" d="M910,218 V302 H100 V224" marker-end="url(#ah)"/>
+        <text class="dg-cap" x="505" y="322" text-anchor="middle">page updates · repeat until done</text>
+
+        <!-- nodes -->
+        <g>
+          <rect class="dg-node" x="10" y="122" width="180" height="96" rx="13"/>
+          <text class="dg-title" x="100" y="164" text-anchor="middle">Playwright</text>
+          <text class="dg-sub" x="100" y="187" text-anchor="middle">page under test</text>
+        </g>
+        <g>
+          <rect class="dg-node brain" x="283" y="122" width="180" height="96" rx="13"/>
+          <text class="dg-role brain" x="373" y="148" text-anchor="middle">⌁ BRAIN · PLAN</text>
+          <text class="dg-title" x="373" y="174" text-anchor="middle">pick next action</text>
+          <text class="dg-sub" x="373" y="196" text-anchor="middle">qwen2.5:7b / Sonnet</text>
+        </g>
+        <g>
+          <rect class="dg-node eyes" x="556" y="122" width="180" height="96" rx="13"/>
+          <text class="dg-role eyes" x="646" y="148" text-anchor="middle">◎ EYES · GROUND</text>
+          <text class="dg-title" x="646" y="174" text-anchor="middle">locate target</text>
+          <text class="dg-sub" x="646" y="196" text-anchor="middle">Holo 3.1 / Sonnet</text>
+        </g>
+        <g>
+          <rect class="dg-node" x="820" y="122" width="180" height="96" rx="13"/>
+          <text class="dg-title" x="910" y="164" text-anchor="middle">Execute</text>
+          <text class="dg-sub" x="910" y="187" text-anchor="middle">click / type</text>
+        </g>
+      </svg>
     </div>
   </section>
 

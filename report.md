@@ -98,3 +98,105 @@ reboot). Run on a quiet machine, or `sudo mdutil -a -i off` while benchmarking.
 - `[ok]` done(success=True)
 
 </details>
+
+## checkout-flow (eyes+brain) — 2026-06-03 23:34
+
+Page: `shop.html` · local brain: `qwen2.5:7b` · cloud: `claude-sonnet-4-6`
+
+| Config | Result | Total s | Model s | Steps | Eyes tok | Brain tok | Total tok |
+|---|---|--:|--:|--:|--:|--:|--:|
+| Holo + LocalModel (qwen2.5:7b) | ✅ | 100.6 | 88.1 | 8 | 9935 | 5530 | 15465 |
+| Holo + Sonnet | ✅ | 89.8 | 78.3 | 8 | 9941 | 6219 | 16160 |
+| Sonnet + Sonnet | ✅ | 41.6 | 32.7 | 8 | 11581 | 6197 | 17778 |
+
+<details><summary>Holo + LocalModel (qwen2.5:7b) — steps</summary>
+
+- `[ok]` 13.24s — click 'Products' @(266,30)
+- `[ok]` 8.77s — click 'Add to cart for Mechanical Keyboard' @(192,640)
+- `[ok]` 8.54s — click 'Cart1' @(334,30)
+- `[ok]` 8.16s — click 'Proceed to checkout (in: Your Cart Mechanical Keyboard 1 × Proceed to check)' @(135,212)
+- `[ok]` 10.34s — type 'Ruslan Test' into 'Full name' @(240,176)
+- `[ok]` 10.32s — type 'ruslan@example.com' into 'Email' @(240,256)
+- `[ok]` 13.68s — type '123 Demo Street' into 'Shipping address (in: Shipping address)' @(240,336)
+- `[ok]` 13.49s — click 'Place order (in: Checkout Full name Email Shipping address Place order)' @(106,395)
+- `[ok]` 1.55s — done(success=True) — The goal is achieved, no further actions needed.
+
+</details>
+
+<details><summary>Holo + Sonnet — steps</summary>
+
+- `[ok]` 11.76s — click 'Products' @(266,30)
+- `[ok]` 11.66s — click 'Add to cart (in: Mechanical Keyboard $89 Add to cart)' @(192,640)
+- `[ok]` 10.46s — click 'Cart1' @(334,30)
+- `[ok]` 8.53s — click 'Proceed to checkout' @(133,212)
+- `[ok]` 9.10s — type 'Ruslan Test' into 'input: ""  (in: Full name)' @(240,176)
+- `[ok]` 8.26s — type 'ruslan@example.com' into 'input: ""  (in: Email)' @(240,257)
+- `[ok]` 8.36s — type '123 Demo Street' into 'input: ""  (in: Shipping address)' @(240,336)
+- `[ok]` 7.98s — click 'Place order  (in: Checkout Full name Email Shipping address Place or)' @(102,395)
+- `[ok]` 2.23s — done(success=True) — The goal has been achieved. The page shows 'Order confirmed — thank you, Ruslan 
+
+</details>
+
+<details><summary>Sonnet + Sonnet — steps</summary>
+
+- `[ok]` 3.61s — click 'Products' @(265,30)
+- `[ok]` 3.66s — click 'Add to cart (in: Mechanical Keyboard $89 Add to cart)' @(193,640)
+- `[ok]` 3.66s — click 'Cart1' @(340,30)
+- `[ok]` 3.86s — click 'Proceed to checkout' @(140,211)
+- `[ok]` 4.08s — type 'Ruslan Test' into 'input: ""  (in: Full name)' @(238,178)
+- `[ok]` 3.74s — type 'ruslan@example.com' into 'input: ""  (in: Email)' @(231,255)
+- `[ok]` 4.13s — type '123 Demo Street' into 'input: ""  (in: Shipping address)' @(189,335)
+- `[ok]` 3.72s — click 'Place order' @(101,395)
+- `[ok]` 2.26s — done(success=True) — The goal has been fully accomplished. The page shows 'Order confirmed — thank yo
+
+</details>
+
+## checkout-flow (eyes+brain) — 2026-06-03 23:38
+
+Page: `shop.html` · local brain: `qwen2.5:7b` · cloud: `claude-sonnet-4-6`
+
+| Config | Result | Total s | Model s | Steps | Eyes tok | Brain tok | Total tok |
+|---|---|--:|--:|--:|--:|--:|--:|
+| Holo + LocalModel (qwen2.5:7b) | ✅ | 90.3 | 78.2 | 8 | 9935 | 5530 | 15465 |
+| Holo + Sonnet | ✅ | 91.0 | 78.9 | 8 | 9886 | 6193 | 16079 |
+| Sonnet + Sonnet | ❌ | 35.0 | 25.5 | 7 | 10148 | 4729 | 14877 |
+
+<details><summary>Holo + LocalModel (qwen2.5:7b) — steps</summary>
+
+- `[ok]` 11.94s — click 'Products' @(266,30)
+- `[ok]` 8.67s — click 'Add to cart for Mechanical Keyboard' @(192,640)
+- `[ok]` 8.72s — click 'Cart1' @(334,30)
+- `[ok]` 10.28s — click 'Proceed to checkout (in: Your Cart Mechanical Keyboard 1 × Proceed to check)' @(135,212)
+- `[ok]` 9.36s — type 'Ruslan Test' into 'Full name' @(240,176)
+- `[ok]` 9.90s — type 'ruslan@example.com' into 'Email' @(240,256)
+- `[ok]` 10.91s — type '123 Demo Street' into 'Shipping address (in: Shipping address)' @(240,336)
+- `[ok]` 7.37s — click 'Place order (in: Checkout Full name Email Shipping address Place order)' @(106,395)
+- `[ok]` 1.09s — done(success=True) — The goal is achieved, no further actions needed.
+
+</details>
+
+<details><summary>Holo + Sonnet — steps</summary>
+
+- `[ok]` 10.34s — click 'Products' @(266,30)
+- `[ok]` 13.09s — click 'Add to cart (in: Mechanical Keyboard $89 Add to cart)' @(192,640)
+- `[ok]` 9.30s — click 'Cart1' @(334,30)
+- `[ok]` 7.56s — click 'Proceed to checkout' @(135,212)
+- `[ok]` 9.91s — type 'Ruslan Test' into 'input:  (in: Full name)' @(240,176)
+- `[ok]` 8.70s — type 'ruslan@example.com' into 'input: ""  (in: Email)' @(240,257)
+- `[ok]` 9.11s — type '123 Demo Street' into 'input: ""  (in: Shipping address)' @(240,336)
+- `[ok]` 8.57s — click 'Place order' @(106,395)
+- `[ok]` 2.31s — done(success=True) — The order has been confirmed successfully. The page shows 'Order confirmed — tha
+
+</details>
+
+<details><summary>Sonnet + Sonnet — steps</summary>
+
+- `[ok]` 3.61s — click 'Products' @(265,30)
+- `[ok]` 3.67s — click 'Add to cart (in: Mechanical Keyboard $89 Add to cart)' @(193,640)
+- `[ok]` 3.45s — click 'Cart1' @(340,30)
+- `[ok]` 3.68s — click 'Proceed to checkout' @(140,211)
+- `[ok]` 4.68s — type 'Ruslan Test' into 'input: ""  (in: Full name)' @(237,175)
+- `[ok]` 4.44s — type 'ruslan@example.com' into 'input: ""  (in: Email)' @(228,257)
+- `[ERR]` 1.74s — eyes error on 'input: ""  (in: Shipping address)' — JSONDecodeError: Expecting ':' delimiter: line 1 column 14 (char 13)
+
+</details>
